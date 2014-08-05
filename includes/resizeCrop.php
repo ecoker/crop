@@ -119,6 +119,44 @@ function altImage($fileLoc) {
 
 }
 
+/* IMAGE RODEO */
+function imageRodeo($fileLoc) {
+	$views = array('ia', 'if', 'il');
+	// $m = $view . ' // ' . checkRatio() . '<br>' . '<img src="' . $fileLoc . '" /><br>';
+	foreach($views as $vw) {
+		$testLoc = str_ireplace($view, $vw, $fileLoc);
+		if (fileExists( $testLoc )) {
+			$img = @imagecreatefromjpeg( $testLoc );
+			$colorArray = array('0xFFFFFF', '0xFEFEFE', '0xFEFEFC');
+			$b_top = $b_btm = $b_lft = $b_rt = 0;
+			while ( count($colorArray) < 16 ) {
+				$stopColors = checkPixels($img, $colorArray);
+				$colorArray[] = $stopColors['btm'];
+				$colorArray[] = $stopColors['top'];
+			}
+			$testRatio[$vw] = checkRatio();
+			// $m .= $vw . ' // ' . checkRatio() . '<br>' . '<img src="' . $testLoc . '" /><br>';
+		} else {
+			$testRatio[$vw] = false;
+		}
+	}
+	if ($testRatio['if'] > 2 && !$testRatio['il'] && ($testRatio['ia'] > $testRatio['ib'])) {
+		if ($testRatio['ib'] < 1 && $testRatio['ia'] > 1.5) {
+			return str_ireplace('ib', 'ia', $fileLoc);
+		} else {
+			return $fileLoc;
+		}
+	}
+	if ($testRatio['if'] && $testRatio['il']) {
+		if ($testRatio['if'] > $testRatio['il']) {
+			return str_ireplace('ib', 'if', $fileLoc);
+		} else {
+			return str_ireplace('ib', 'il', $fileLoc);
+		}
+	}
+	return $fileLoc;
+}
+
 /* ===== WHITE SPACE CROP ===== */
 function cropWhiteSpace($fileLoc, $rVal, $view) {
 	global $b_top, $b_btm, $b_lft, $b_rt, $img;
@@ -129,11 +167,15 @@ function cropWhiteSpace($fileLoc, $rVal, $view) {
 	$fileLoc = findThatFile($fileLoc, $view); // also sets $img variable
 
 	$colorArray = array('0xFFFFFF', '0xFEFEFE', '0xFEFEFC');
-	
 	while ( count($colorArray) < 16 ) {
 		$stopColors = checkPixels($img, $colorArray);
 		$colorArray[] = $stopColors['btm'];
 		$colorArray[] = $stopColors['top'];
+	}
+
+	if (checkRatio() < 1.75) {
+		/* CALL IN THE CLOWNS */
+		$fileLoc = imageRodeo($fileLoc);
 	}
 
 	/* IMAGICK VERSION */
