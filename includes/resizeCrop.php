@@ -119,14 +119,49 @@ function altImage($fileLoc) {
 
 }
 
+/* SORT ARRAY */
+function compare_heights($a, $b) { 
+    if($a->height == $b->height) return 0;
+  	return ($a->height < $b->height) ? -1 : 1;
+}
+function compare_widths($a, $b) { 
+    if($a->width == $b->width) return 0;
+  	return ($a->width > $b->width) ? -1 : 1;
+}
+
+function preferredImage($view_exps, $img_array, $side_view) {
+	$found = false;
+	foreach($view_exps as $exp) {
+		foreach ($img_array as $o) {
+			if (preg_match($exp, $o->loc)) {
+				$h_ratio = $o->height / $side_view->height;
+				$w_ratio = $o->width / $side_view->width;
+				if ($h_ratio > .825 && $w_ratio > .825) {
+					$side_view = $o;
+					$found = true;
+					break;
+				}
+			}	
+		}
+		if ($found) break;
+	}
+	return $side_view;
+}
+
 /* IMAGE RODEO */
-function imageRodeo($fileLoc) {
-	$views = array('ia', 'if', 'il');
-	// $m = $view . ' // ' . checkRatio() . '<br>' . '<img src="' . $fileLoc . '" /><br>';
+function imageRodeo($fileLoc, $view) {
+	global $b_top, $b_btm, $b_lft, $b_rt, $img;
+	$views = array('ia', 'ib', 'ic', 'id', 'if', 'ii', 'ij', 'ik', 'il');
+	$m = $view . ' // ' . checkRatio() . '<br>' . '<img src="' . $fileLoc . '" /><br>';
+	
+	$img_array = array();
+	
 	foreach($views as $vw) {
 		$testLoc = str_ireplace($view, $vw, $fileLoc);
+		if ($vw == 'il' && fileExists( str_ireplace('.jpg', '.gif', $testLoc))) $testLoc = str_ireplace('.jpg', '.gif', $testLoc);
 		if (fileExists( $testLoc )) {
-			$img = @imagecreatefromjpeg( $testLoc );
+			if (strpos($testLoc, '.gif')) $img = @imagecreatefromgif( $testLoc );
+			else $img = @imagecreatefromjpeg( $testLoc );
 			$colorArray = array('0xFFFFFF', '0xFEFEFE', '0xFEFEFC');
 			$b_top = $b_btm = $b_lft = $b_rt = 0;
 			while ( count($colorArray) < 16 ) {
@@ -135,30 +170,35 @@ function imageRodeo($fileLoc) {
 				$colorArray[] = $stopColors['top'];
 			}
 			$testRatio[$vw] = checkRatio();
-			// $m .= $vw . ' // ' . checkRatio() . '<br>' . '<img src="' . $testLoc . '" /><br>';
+			$img_width = imagesx($img)  - ($b_lft + $b_rt);
+			$img_height = imagesy($img)  - ($b_top + $b_btm);
+			$m .= $vw . ' | Width: ' . $img_width . ' | Height: ' . $img_height . ' | Ratio: ' . checkRatio() . '<br>' . '<img src="' . $testLoc . '" /><br>';
+			if (imagesx($img) > 200) {
+				$img_array[] = (object) array('width'=>$img_width, 'height'=>$img_height, 'ratio'=>checkRatio(), 'loc'=>$testLoc);
+			}
 		} else {
 			$testRatio[$vw] = false;
 		}
 	}
-	if ($testRatio['if'] > 2 && !$testRatio['il'] && ($testRatio['ia'] > $testRatio['ib'])) {
-		if ($testRatio['ib'] < 1 && $testRatio['ia'] > 1.5) {
-			return str_ireplace('ib', 'ia', $fileLoc);
-		} else {
-			return $fileLoc;
-		}
-	}
-	if ($testRatio['if'] && $testRatio['il']) {
-		if ($testRatio['if'] > $testRatio['il']) {
-			return str_ireplace('ib', 'if', $fileLoc);
-		} else {
-			return str_ireplace('ib', 'il', $fileLoc);
-		}
-	}
-	return $fileLoc;
+	
+	usort($img_array, 'compare_heights');	
+	if (count($img_array) >= 5) $img_array = array_slice($img_array, 2);
+
+	usort($img_array, 'compare_widths');
+	// echo '<pre>';
+	// print_r($img_array);
+	// echo '</pre>';
+
+	$side_view = preferredImage(array('/_ib/i', '/_if/i', '/_ia/i'), $img_array, array_shift($img_array));
+
+	// echo '<img src="' . $side_view->loc . '">';
+	// die();
+
+	return $side_view->loc;
 }
 
 /* ===== WHITE SPACE CROP ===== */
-function cropWhiteSpace($fileLoc, $rVal, $view) {
+function cropWhiteSpace($fileLoc, $rVal, $view, $brand) {
 	global $b_top, $b_btm, $b_lft, $b_rt, $img;
 	if (stripos($fileLoc, '.gif') > 0) {
 		$fileLoc = str_ireplace('.gif', '.jpg', $fileLoc);
@@ -173,9 +213,21 @@ function cropWhiteSpace($fileLoc, $rVal, $view) {
 		$colorArray[] = $stopColors['top'];
 	}
 
-	if (checkRatio() < 1.75) {
+	/* THIS LOGIC IS SUPER SPOTTY - NEEDS TO BE BRAND SPECIFIC... */
+	$brands = array('skechers', 'skecherscali', 'skechersperformance', 'skecherswork', 'kswiss');
+	if (checkRatio() < 1.5 && in_array($brand, $brands)) {
 		/* CALL IN THE CLOWNS */
-		$fileLoc = imageRodeo($fileLoc);
+		$fileLoc = imageRodeo($fileLoc, $view);
+		// echo '<img src="' . $fileLoc . '">';
+		// die();
+		$img = @imagecreatefromjpeg( $fileLoc );
+		$colorArray = array('0xFFFFFF', '0xFEFEFE', '0xFEFEFC');
+		$b_top = $b_btm = $b_lft = $b_rt = 0;
+		while ( count($colorArray) < 16 ) {
+			$stopColors = checkPixels($img, $colorArray);
+			$colorArray[] = $stopColors['btm'];
+			$colorArray[] = $stopColors['top'];
+		}
 	}
 
 	/* IMAGICK VERSION */
