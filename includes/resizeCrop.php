@@ -139,7 +139,7 @@ function preferredImage($view_exps, $img_array, $side_view) {
 			if (preg_match($exp, $o->loc)) {
 				$h_ratio = $o->height / $side_view->height;
 				$w_ratio = $o->width / $side_view->width;
-				if ($h_ratio > .775 && $w_ratio > .825) {
+				if ($h_ratio > .5 && $w_ratio > .825) {
 					$side_view = $o;
 					$found = true;
 					break;
