@@ -144,6 +144,9 @@ function preferredImage($view_exps, $img_array, $side_view) {
 					$found = true;
 					break;
 				}
+				// else {
+				// 	echo "FAIL: $h_ratio // $w_ratio // $o->loc<br>";
+				// }
 			}
 		}
 		if ($found) break;
@@ -187,7 +190,7 @@ function imageRodeo($fileLoc, $view) {
 	}
 	
 	usort($img_array, 'compare_heights');	
-	if (count($img_array) >= 5) $img_array = array_slice($img_array, 2);
+	if (count($img_array) >= 5 && !preg_match('/_ib|_if/i', $img_array[0]->loc) && !preg_match('/_ib|_if/i', $img_array[1]->loc)) $img_array = array_slice($img_array, 2);
 
 	usort($img_array, 'compare_widths');
 	// echo '<pre>';
