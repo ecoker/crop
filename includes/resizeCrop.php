@@ -131,17 +131,20 @@ function compare_widths($a, $b) {
 
 function preferredImage($view_exps, $img_array, $side_view) {
 	$found = false;
+	// echo '<pre>';
+	// print_r($side_view);
+	// echo '</pre>';
 	foreach($view_exps as $exp) {
 		foreach ($img_array as $o) {
 			if (preg_match($exp, $o->loc)) {
 				$h_ratio = $o->height / $side_view->height;
 				$w_ratio = $o->width / $side_view->width;
-				if ($h_ratio > .825 && $w_ratio > .825) {
+				if ($h_ratio > .775 && $w_ratio > .825) {
 					$side_view = $o;
 					$found = true;
 					break;
 				}
-			}	
+			}
 		}
 		if ($found) break;
 	}
@@ -158,6 +161,8 @@ function imageRodeo($fileLoc, $view) {
 	
 	foreach($views as $vw) {
 		$testLoc = str_ireplace($view, $vw, $fileLoc);
+		/* MAYBE THIS IS AN ANIMATED GIF? */
+		if ($vw == 'ia' && fileExists( str_ireplace('.jpg', '.gif', $testLoc))) $testLoc = str_ireplace('.jpg', '.gif', $testLoc);
 		if ($vw == 'il' && fileExists( str_ireplace('.jpg', '.gif', $testLoc))) $testLoc = str_ireplace('.jpg', '.gif', $testLoc);
 		if (fileExists( $testLoc )) {
 			if (strpos($testLoc, '.gif')) $img = @imagecreatefromgif( $testLoc );
@@ -218,8 +223,6 @@ function cropWhiteSpace($fileLoc, $rVal, $view, $brand) {
 	if (checkRatio() < 1.5 && in_array($brand, $brands)) {
 		/* CALL IN THE CLOWNS */
 		$fileLoc = imageRodeo($fileLoc, $view);
-		// echo '<img src="' . $fileLoc . '">';
-		// die();
 		$img = @imagecreatefromjpeg( $fileLoc );
 		$colorArray = array('0xFFFFFF', '0xFEFEFE', '0xFEFEFC');
 		$b_top = $b_btm = $b_lft = $b_rt = 0;
