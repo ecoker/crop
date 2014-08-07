@@ -1,13 +1,14 @@
 <?php
 //find the size of the borders
-$img = false;
+$img   = false;
 $b_top = 0;
 $b_btm = 0;
 $b_lft = 0;
-$b_rt = 0;
+$b_rt  = 0;
+$debug = false;
 
 function checkPixels($img, $colorArray) {
-	global $b_top, $b_btm, $b_lft, $b_rt;
+	global $b_top, $b_btm, $b_lft, $b_rt, $debug;
 	$stopColors = array();
 	//top
 	for(; $b_top < imagesy($img); ++$b_top) {
@@ -65,7 +66,7 @@ function fileExists($fileLoc) {
 }
 
 function findThatFile($fileLoc, $view) {
-	global $img;
+	global $img, $debug;
 	
 	if ( fileExists($fileLoc) ) {
 		$img = @imagecreatefromjpeg($fileLoc);
@@ -99,7 +100,7 @@ function findThatFile($fileLoc, $view) {
 }
 
 function checkRatio() {
-	global $b_top, $b_btm, $b_lft, $b_rt, $img;
+	global $b_top, $b_btm, $b_lft, $b_rt, $img, $debug;
 	$width = imagesx($img) - ($b_lft + $b_rt);
 	$height = imagesy($img) - ($b_top + $b_btm);
 	$ratio = $width / $height;
@@ -131,9 +132,11 @@ function compare_widths($a, $b) {
 
 function preferredImage($view_exps, $img_array, $side_view) {
 	$found = false;
-	// echo '<pre>';
-	// print_r($side_view);
-	// echo '</pre>';
+	if ($debug) {
+		echo '<pre>';
+		print_r($side_view);
+		echo '</pre>';
+	}
 	foreach($view_exps as $exp) {
 		foreach ($img_array as $o) {
 			if (preg_match($exp, $o->loc)) {
@@ -143,21 +146,28 @@ function preferredImage($view_exps, $img_array, $side_view) {
 					$side_view = $o;
 					$found = true;
 					break;
+				} elseif ($debug) {
+					echo "FAIL: $h_ratio // $w_ratio // $o->loc<br>";
 				}
-				// else {
-				// 	echo "FAIL: $h_ratio // $w_ratio // $o->loc<br>";
-				// }
 			}
 		}
 		if ($found) break;
+	}
+	if ($side_view->ratio < 1) {
+		$side_view->loc = preg_replace('/_ib|_ic|_id|_ii|_ij|_ik|_il/i', '_is', $side_view->loc);
 	}
 	return $side_view;
 }
 
 /* IMAGE RODEO */
-function imageRodeo($fileLoc, $view) {
-	global $b_top, $b_btm, $b_lft, $b_rt, $img;
-	$views = array('ia', 'ib', 'ic', 'id', 'if', 'ii', 'ij', 'ik', 'il');
+function imageRodeo($fileLoc, $view, $brand) {
+	global $b_top, $b_btm, $b_lft, $b_rt, $img, $debug;
+	if (preg_match('/bass|brassboot|coconuts|deerstags|gbx|matisse|nunnbush|florsheim/i', $brand)) {
+		$views = array('ia', 'ib', 'is', 'ii', 'ij', 'ik', 'il');
+	} else {
+		$views = array('ia', 'ib', 'ic', 'id', 'if', 'ii', 'ij', 'ik', 'il');
+	}
+	
 	$m = $view . ' // ' . checkRatio() . '<br>' . '<img src="' . $fileLoc . '" /><br>';
 	
 	$img_array = array();
@@ -193,21 +203,31 @@ function imageRodeo($fileLoc, $view) {
 	if (count($img_array) >= 5 && !preg_match('/_ib|_if/i', $img_array[0]->loc) && !preg_match('/_ib|_if/i', $img_array[1]->loc)) $img_array = array_slice($img_array, 2);
 
 	usort($img_array, 'compare_widths');
-	// echo '<pre>';
-	// print_r($img_array);
-	// echo '</pre>';
+	if ($debug) {
+		echo '<pre>';
+		print_r($img_array);
+		echo '</pre>';
+	}
 
-	$side_view = preferredImage(array('/_ib/i', '/_if/i', '/_ia/i'), $img_array, array_shift($img_array));
+	if (preg_match('/bass|stacyadams/i', $brand)) {
+		$preferred_views = array('/_ib/i', '/_ia/i');
+	} else {
+		$preferred_views = array('/_ib/i', '/_if/i', '/_ia/i');
+	}
 
-	// echo '<img src="' . $side_view->loc . '">';
-	// die();
+	$side_view = preferredImage($preferred_views, $img_array, array_shift($img_array));
+
+	if ($debug) {
+		echo '<img src="' . $side_view->loc . '">';
+		die();
+	}
 
 	return $side_view->loc;
 }
 
 /* ===== WHITE SPACE CROP ===== */
 function cropWhiteSpace($fileLoc, $rVal, $view, $brand) {
-	global $b_top, $b_btm, $b_lft, $b_rt, $img;
+	global $b_top, $b_btm, $b_lft, $b_rt, $img, $debug;
 	if (stripos($fileLoc, '.gif') > 0) {
 		$fileLoc = str_ireplace('.gif', '.jpg', $fileLoc);
 	}
@@ -222,10 +242,11 @@ function cropWhiteSpace($fileLoc, $rVal, $view, $brand) {
 	}
 
 	/* THIS LOGIC IS SUPER SPOTTY - NEEDS TO BE BRAND SPECIFIC... */
-	$brands = array('skechers', 'skecherscali', 'skechersperformance', 'skecherswork', 'kswiss');
-	if (checkRatio() < 1.5 && in_array($brand, $brands)) {
+	$brands = array('skechers', 'skecherscali', 'skechersperformance', 'skecherswork', 'kswiss', 'stacyadams', 'bass', 'brassboot', 'coconuts', 'deerstags', 'gbx', 'matisse', 'nunnbush', 'florsheim');
+
+	if (checkRatio() < 1.7 && in_array($brand, $brands)) {
 		/* CALL IN THE CLOWNS */
-		$fileLoc = imageRodeo($fileLoc, $view);
+		$fileLoc = imageRodeo($fileLoc, $view, $brand);
 		$img = @imagecreatefromjpeg( $fileLoc );
 		$colorArray = array('0xFFFFFF', '0xFEFEFE', '0xFEFEFC');
 		$b_top = $b_btm = $b_lft = $b_rt = 0;
