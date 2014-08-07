@@ -130,7 +130,8 @@ function compare_widths($a, $b) {
   	return ($a->width > $b->width) ? -1 : 1;
 }
 
-function preferredImage($view_exps, $img_array, $side_view) {
+function preferredImage($view_exps, $img_array, $side_view, $brand) {
+	global $debug;
 	$found = false;
 	if ($debug) {
 		echo '<pre>';
@@ -142,8 +143,13 @@ function preferredImage($view_exps, $img_array, $side_view) {
 			if (preg_match($exp, $o->loc)) {
 				$h_ratio = $o->height / $side_view->height;
 				$w_ratio = $o->width / $side_view->width;
-				if ($h_ratio > .5 && $w_ratio > .825) {
+				if ($h_ratio > .5 && $w_ratio > .775) {
+					if ($debug) echo "FOUND: $h_ratio // $w_ratio // $o->loc<br>";
 					$side_view = $o;
+					if (preg_match('/bogs/i', $brand)) {
+						/* IMAGE RATIO BRAND EXCEPTIONS */
+						$side_view->ratio = 1;
+					}
 					$found = true;
 					break;
 				} elseif ($debug) {
@@ -162,7 +168,7 @@ function preferredImage($view_exps, $img_array, $side_view) {
 /* IMAGE RODEO */
 function imageRodeo($fileLoc, $view, $brand) {
 	global $b_top, $b_btm, $b_lft, $b_rt, $img, $debug;
-	if (preg_match('/bass|brassboot|coconuts|deerstags|gbx|matisse|nunnbush|florsheim/i', $brand)) {
+	if (preg_match('/bass|brassboot|coconuts|deerstags|gbx|matisse|nunnbush|florsheim|bogs/i', $brand)) {
 		$views = array('ia', 'ib', 'is', 'ii', 'ij', 'ik', 'il');
 	} else {
 		$views = array('ia', 'ib', 'ic', 'id', 'if', 'ii', 'ij', 'ik', 'il');
@@ -209,13 +215,14 @@ function imageRodeo($fileLoc, $view, $brand) {
 		echo '</pre>';
 	}
 
+	
 	if (preg_match('/bass|stacyadams/i', $brand)) {
 		$preferred_views = array('/_ib/i', '/_ia/i');
 	} else {
 		$preferred_views = array('/_ib/i', '/_if/i', '/_ia/i');
 	}
 
-	$side_view = preferredImage($preferred_views, $img_array, array_shift($img_array));
+	$side_view = preferredImage($preferred_views, $img_array, array_shift($img_array), $brand);
 
 	if ($debug) {
 		echo '<img src="' . $side_view->loc . '">';
@@ -241,8 +248,8 @@ function cropWhiteSpace($fileLoc, $rVal, $view, $brand) {
 		$colorArray[] = $stopColors['top'];
 	}
 
-	/* THIS LOGIC IS SUPER SPOTTY - NEEDS TO BE BRAND SPECIFIC... */
-	$brands = array('skechers', 'skecherscali', 'skechersperformance', 'skecherswork', 'kswiss', 'stacyadams', 'bass', 'brassboot', 'coconuts', 'deerstags', 'gbx', 'matisse', 'nunnbush', 'florsheim');
+	/* THIS LOGIC IS SPOTTY - NEEDS TO BE BRAND SPECIFIC... */
+	$brands = array('skechers', 'skecherscali', 'skechersperformance', 'skecherswork', 'kswiss', 'stacyadams', 'bass', 'brassboot', 'coconuts', 'deerstags', 'gbx', 'matisse', 'nunnbush', 'florsheim', 'bogs');
 
 	if (checkRatio() < 1.7 && in_array($brand, $brands)) {
 		/* CALL IN THE CLOWNS */
