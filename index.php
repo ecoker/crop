@@ -26,6 +26,7 @@ if ( strpos($parts[4], '.') > 0 ) {
 $img = cropWhiteSpace( $file_location,  $rVal, $parts[2], $parts[3]);
 
 if ($img) {
+	header('Last-Modified: '.gmdate('D, d M Y H:i:s \G\M\T', strtotime(date('Y-m-d'))) );
   header('Content-Type: image/jpeg');
   echo $img;
 } else {

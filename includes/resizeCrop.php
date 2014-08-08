@@ -168,10 +168,10 @@ function preferredImage($view_exps, $img_array, $side_view, $brand) {
 /* IMAGE RODEO */
 function imageRodeo($fileLoc, $view, $brand) {
 	global $b_top, $b_btm, $b_lft, $b_rt, $img, $debug;
-	if (preg_match('/bass|brassboot|coconuts|deerstags|gbx|matisse|nunnbush|florsheim|bogs/i', $brand)) {
-		$views = array('ia', 'ib', 'is', 'ii', 'ij', 'ik', 'il');
-	} else {
+	if (preg_match('/skechers|kswiss/i', $brand)) {
 		$views = array('ia', 'ib', 'ic', 'id', 'if', 'ii', 'ij', 'ik', 'il');
+	} else {
+		$views = array('ia', 'ib', 'is', 'ii', 'ij', 'ik', 'il');
 	}
 	
 	$m = $view . ' // ' . checkRatio() . '<br>' . '<img src="' . $fileLoc . '" /><br>';
@@ -249,9 +249,9 @@ function cropWhiteSpace($fileLoc, $rVal, $view, $brand) {
 	}
 
 	/* THIS LOGIC IS SPOTTY - NEEDS TO BE BRAND SPECIFIC... */
-	$brands = array('skechers', 'skecherscali', 'skechersperformance', 'skecherswork', 'kswiss', 'stacyadams', 'bass', 'brassboot', 'coconuts', 'deerstags', 'gbx', 'matisse', 'nunnbush', 'florsheim', 'bogs');
+	$brands = array('skechers', 'skecherscali', 'skechersperformance', 'skecherswork', 'kswiss', 'stacyadams', 'bass', 'brassboot', 'coconuts', 'deerstags', 'gbx', 'matisse', 'nunnbush', 'florsheim', 'bogs', 'propet');
 
-	if (checkRatio() < 1.7 && in_array($brand, $brands)) {
+	if (checkRatio() < 1.7 && in_array($brand, $brands) && preg_match('/ib/i', $view)) {
 		/* CALL IN THE CLOWNS */
 		$fileLoc = imageRodeo($fileLoc, $view, $brand);
 		$img = @imagecreatefromjpeg( $fileLoc );
