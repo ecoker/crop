@@ -262,6 +262,10 @@ function cropWhiteSpace($fileLoc, $rVal, $view, $brand) {
 			$colorArray[] = $stopColors['btm'];
 			$colorArray[] = $stopColors['top'];
 		}
+	} elseif ($debug) {
+		echo "Source File: $fileLoc<br>";
+		echo "<img src=\"$fileLoc\" />";
+		die();
 	}
 
 	/* IMAGICK VERSION */
